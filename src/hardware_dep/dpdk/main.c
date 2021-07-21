@@ -48,7 +48,7 @@ void broadcast_packet(int egress_port, int ingress_port, LCPARAMS)
         if (is_port_disabled)   continue;
 
         packet* pkt_out = (nb_port < nb_ports) ? clone_packet(pd->wrapper, lcdata->mempool) : pd->wrapper;
-        send_single_packet(pkt_out, egress_port, ingress_port, false, LCPARAMS_IN);
+        send_single_packet(pkt_out, portidx, ingress_port, false, LCPARAMS_IN);
 
         nb_port++;
     }
