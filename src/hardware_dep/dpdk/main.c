@@ -79,7 +79,9 @@ void send_packet(int egress_port, int ingress_port, LCPARAMS)
 
 void do_single_tx(unsigned queue_idx, unsigned pkt_idx, LCPARAMS)
 {
-    if (unlikely(GET_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD) == EGRESS_DROP_VALUE)) {
+    uint32_t egress_port;
+    EXTRACT_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD, egress_port);
+    if (unlikely(egress_port == EGRESS_DROP_VALUE)) {
         free_packet(LCPARAMS_IN);
     } else {
         debug(" " T4LIT(<<<<,outgoing) " " T4LIT(Egressing,outgoing) " packet\n");
