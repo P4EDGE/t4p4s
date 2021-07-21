@@ -286,7 +286,9 @@ pkt_name_indent = " " * longest_hdr_name_len
 #} }
 
 #{ bool is_packet_dropped(STDPARAMS) {
-#[      return GET_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD) == EGRESS_DROP_VALUE;
+#[      uint32_t port;
+#[      EXTRACT_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD, port);
+#[      return port == EGRESS_DROP_VALUE;
 #} }
 
 

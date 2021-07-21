@@ -18,11 +18,15 @@ void transfer_to_egress(packet_descriptor_t* pd)
 }
 
 int extract_egress_port(packet_descriptor_t* pd) {
-    return GET_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD);
+    uint32_t port;
+    EXTRACT_INT32_AUTO_PACKET(pd, HDR(all_metadatas), EGRESS_META_FLD, port);
+    return port;
 }
 
 int extract_ingress_port(packet_descriptor_t* pd) {
-    return GET_INT32_AUTO_PACKET(pd, HDR(all_metadatas), INGRESS_META_FLD);
+    uint32_t port;
+    EXTRACT_INT32_AUTO_PACKET(pd, HDR(all_metadatas), INGRESS_META_FLD, port);
+    return port;
 }
 
 void set_handle_packet_metadata(packet_descriptor_t* pd, uint32_t portid)
