@@ -47,12 +47,18 @@ header icmp_t {
     bit<16> checksum;
     bit<16> identifier;
     bit<16> sequence_number;
-    bit<64> timestamp;
+    bit<32> pad_a; 
+    bit<32> pad_b;
+    bit<32> pad_c;
+    bit<32> pad_d;
+    bit<32> pad_e;
+    bit<32> pad_f;
+    bit<32> pad_g;
+    bit<32> pad_h;
 }
 
 header ipv4_t {
-    bit<4>    version;
-    bit<4>    ihl;
+    bit<8>    versionihl;
     bit<8>    diffserv;
     bit<16>   totalLen;
     bit<16>   identification;
@@ -247,13 +253,23 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
             {
               hdr.icmp.icmp_type,
               hdr.icmp.icmp_code,
+              16w0,
               hdr.icmp.identifier,
               hdr.icmp.sequence_number,
-              hdr.icmp.timestamp
+              hdr.icmp.pad_a,
+              hdr.icmp.pad_b,
+              hdr.icmp.pad_c,
+              hdr.icmp.pad_d,
+              hdr.icmp.pad_e,
+              hdr.icmp.pad_f,
+              hdr.icmp.pad_g,
+              hdr.icmp.pad_h
             },
               hdr.icmp.checksum,
               HashAlgorithm.csum16);
 
+        update_checksum(hdr.ipv4.isValid(), 
+                        { hdr.ipv4.versionihl, hdr.ipv4.diffserv, hdr.ipv4.totalLen, hdr.ipv4.identification, hdr.ipv4.fragOffset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.dstAddr }, hdr.ipv4.hdrChecksum, HashAlgorithm.csum16);
     }
 }
 
