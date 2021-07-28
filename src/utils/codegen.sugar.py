@@ -700,7 +700,7 @@ def gen_format_extern_single(m, mcall, smem_type, is_possibly_multiple, packets_
         #[ int $problem = ${problem_code};
         #{ if (likely($problem == 0)) {
         # TODO PUT BACK! fix DIRECT_...!
-        # [     $funname($funargs);
+        #[     $funname($funargs);
         #[ } else {
         #{     #ifdef T4P4S_DEBUG
         #{         const char* cause_fmt[] = {
