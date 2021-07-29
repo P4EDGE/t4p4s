@@ -420,7 +420,10 @@ def gen_do_assignment(dst, src):
             else:
                 deref = "*" if src.node_type in ("Constant", "Member") and size <= 4 else ""
                 #[ ${format_type(dst.type)} $tmpvar = $deref(${format_type(dst.type)}$deref)((${format_expr(src, expand_parameters=True, needs_variable=True)}));
-                #[ memcpy(&(${format_expr(dst)}), &($tmpvar), ${pad_size});
+                if dst.type.needs_dereferencing:
+                    #[ memcpy(&(${format_expr(dst)}), $tmpvar, ${pad_size});
+                else:
+                    #[ memcpy(&(${format_expr(dst)}), &($tmpvar), ${pad_size});
                 #[ dbg_bytes(&(${format_expr(dst)}), $size, "    : Set " T4LIT(%s,header) "/" T4LIT(%dB) " = ", "$dsttxt", $size);
     elif dst.node_type == 'Member':
         tmpvar = generate_var_name('assign_member')
