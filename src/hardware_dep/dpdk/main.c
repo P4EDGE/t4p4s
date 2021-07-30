@@ -32,6 +32,28 @@ void get_broadcast_port_msg(char result[256], int ingress_port) {
     }
 }
 
+void broadcast_packet_v2(int egress_port, int ingress_port, LCPARAMS)
+{
+    uint8_t nb_ports = get_port_count();
+    uint32_t port_mask = get_port_mask();
+
+    uint8_t nb_port = 0;
+    for (uint8_t portidx = 0; nb_port < nb_ports && portidx < RTE_MAX_ETHPORTS; ++portidx) {
+        bool is_port_disabled = (port_mask & (1 << portidx)) == 0;
+        if (is_port_disabled)   continue;
+
+        packet* pkt_out = (nb_port < nb_ports) ? clone_packet(pd->wrapper, lcdata->mempool) : pd->wrapper;
+        send_single_packet(pkt_out, portidx, ingress_port, false, LCPARAMS_IN);
+
+        nb_port++;
+    }
+
+    if (unlikely(nb_port != nb_ports)) {
+        debug(" " T4LIT(!!!!,error) " " T4LIT(Wrong port count,error) ": " T4LIT(%d) " ports should be present, but only " T4LIT(%d) " found\n", nb_ports, nb_port);
+    }
+}
+
+
 
 void broadcast_packet(int egress_port, int ingress_port, LCPARAMS)
 {
@@ -71,6 +93,13 @@ void send_packet(int egress_port, int ingress_port, LCPARAMS)
             dbg_bytes(rte_pktmbuf_mtod(mbuf, uint8_t*), rte_pktmbuf_pkt_len(mbuf), "   " T4LIT(<<,outgoing) " " T4LIT(Broadcasting,outgoing) " packet from port " T4LIT(%d,port) " to all other ports (%s) (" T4LIT(%dB) "): ", ingress_port, ports_msg, rte_pktmbuf_pkt_len(mbuf));
         #endif
         broadcast_packet(egress_port, ingress_port, LCPARAMS_IN);
+    } else if (unlikely(egress_port == T4P4S_BROADCAST_PORT_V2)) {
+        #ifdef T4P4S_DEBUG
+            char ports_msg[256];
+            get_broadcast_port_msg(ports_msg, 100);
+            dbg_bytes(rte_pktmbuf_mtod(mbuf, uint8_t*), rte_pktmbuf_pkt_len(mbuf), "   " T4LIT(<<,outgoing) " " T4LIT(Broadcasting,outgoing) " packet from port " T4LIT(%d,port) " to all ports (%s) (" T4LIT(%dB) "): ", ingress_port, ports_msg, rte_pktmbuf_pkt_len(mbuf));
+        #endif
+        broadcast_packet_v2(egress_port, ingress_port, LCPARAMS_IN);
     } else {
         dbg_bytes(rte_pktmbuf_mtod(mbuf, uint8_t*), rte_pktmbuf_pkt_len(mbuf), "   " T4LIT(<<,outgoing) " " T4LIT(Emitting,outgoing) " packet on port " T4LIT(%d,port) " (" T4LIT(%dB) "): ", egress_port, rte_pktmbuf_pkt_len(mbuf));
         send_single_packet(pd->wrapper, egress_port, ingress_port, false, LCPARAMS_IN);
