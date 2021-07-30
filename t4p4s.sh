@@ -589,7 +589,7 @@ verbosemsg "Parse port is $(cc 0)$PYTHON_PARSE_HELPER_PORT$nn"
 [ "$(optvalue variant)" == off ] && [ "$(optvalue testcase)" != off -o "$(optvalue suite)" != off ] && OPTS[variant]=test && verbosemsg "Variant $(cc 1)@test$nn is chosen because testing is requested"
 [ "${OPTS[variant]}" == "" -o "${OPTS[variant]}" == "-" ] && OPTS[variant]=std && verbosemsg "Variant $(cc 1)@std$nn is automatically chosen"
 
-
+OPTS[vsn]="16"
 # Determine version by extension if possible
 if [ "${OPTS[vsn]}" == "" ]; then
     P4_EXT="$(basename "${OPTS[source]}")"
