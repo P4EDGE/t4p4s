@@ -50,6 +50,11 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         digest<mac_learn_digest>((bit<32>)1024, { hdr.ethernet.srcAddr, standard_metadata.ingress_port });
     }
 
+    action drop() {
+        mark_to_drop( standard_metadata );
+        exit;
+    }
+
     action _nop() {
     }
 
@@ -57,6 +62,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         actions = {
             forward;
             bcast;
+            drop;
         }
         key = {
             hdr.ethernet.dstAddr: exact;
@@ -69,6 +75,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         actions = {
             mac_learn;
             _nop;
+            drop;
         }
         key = {
             hdr.ethernet.srcAddr: exact;
