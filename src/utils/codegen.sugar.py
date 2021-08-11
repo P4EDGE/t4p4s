@@ -529,7 +529,7 @@ def gen_format_methodcall_digest(m, mcall):
             #[ fields.field_offsets[$idx] = (uint8_t*) field_desc(pd, FLD(${f.expr.member},${f.expression.fld_ref.name})).byte_addr;
             #[ fields.field_widths[$idx]  =            field_desc(pd, FLD(${f.expr.member},${f.expression.fld_ref.name})).bitwidth;
     #[ generate_digest(bg,"${digest_name}",0,&fields);
-    #[ sleep_millis(DIGEST_SLEEP_MILLIS);
+    #[ /*sleep_millis(DIGEST_SLEEP_MILLIS);*/
 
 def is_emit(m):
     return m.expr._ref.urtype('name', lambda n: n == 'packet_out')
@@ -1524,7 +1524,7 @@ def gen_format_call_digest(e):
 
     #{ if ($var != 0) {
     #[     $funname($receiver, $var, SHORT_STDPARAMS_IN);
-    #[     sleep_millis(DIGEST_SLEEP_MILLIS);
+    #[     /*sleep_millis(DIGEST_SLEEP_MILLIS);*/
     #} }
 
 ################################################################################

@@ -78,7 +78,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     }
 
     apply {
-//        smac.apply();
+        smac.apply();
         dmac.apply();
     }
 
