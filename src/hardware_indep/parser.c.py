@@ -257,12 +257,12 @@ for s in parser.states:
             args = component.methodCall.arguments
             var = generate_var_name('vwlen')
             if len(args) == 1:
-                #[     int $var = 0;
+                #[     uint32_t $var = 0;
             else:
                 bexpr = format_expr(args[1].expression)
                 prebuf, postbuf = statement_buffer_value()
                 #[     $prebuf
-                #[     int $var = ${bexpr};
+                #[     uint32_t $var = ${bexpr};
                 #[     $postbuf
 
             #[     int offset_${hdr.name} = parser_extract_${hdr.name}($var, STDPARAMS_IN);

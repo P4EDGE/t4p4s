@@ -118,10 +118,18 @@ if len(hlir.header_stacks) == 0:
 
 #{ static const hdr_info_t hdr_infos[HEADER_COUNT] = {
 byte_offsets = ["0"]
+field_idx_offset = 0
 for idx, hdr in enumerate(hlir.header_instances):
     typ = hdr.urtype
     typ_bit_width = typ.bit_width if 'bit_width' in typ else 0
     typ_byte_width = typ.byte_width if 'byte_width' in typ else 0
+
+    var_width_id = 'FIXED_WIDTH_FIELD'
+    for ti in range(len(hdr.urtype.fields)):
+        f = hdr.urtype.fields[ti]
+        if hasattr(f, 'is_vw') and f.is_vw:
+            var_width_id = field_idx_offset + ti
+            break
 
     #[     // header ${hdr.name}
     #{     {
@@ -130,10 +138,11 @@ for idx, hdr in enumerate(hlir.header_instances):
     #[         .byte_width = ${typ_byte_width}, // ${typ_bit_width} bits, ${typ_bit_width/8.0} bytes
     #[         .byte_offset = ${"+".join(byte_offsets)},
     #[         .is_metadata = ${'true' if 'is_metadata' in typ and typ.is_metadata else 'false'},
-    #[         .var_width_field = ${functools.reduce((lambda x, f: f.id if hasattr(f, 'is_vw') and f.is_vw else x), hdr.urtype.fields, 'FIXED_WIDTH_FIELD')},
+    #[         .var_width_field = ${var_width_id}, //${functools.reduce((lambda x, f: f.id if hasattr(f, 'is_vw') and f.is_vw else x), hdr.urtype.fields, 'FIXED_WIDTH_FIELD')},
     #}     },
     #[
-
+    
+    field_idx_offset += len(hdr.urtype.fields)
     byte_offsets += [f'{typ_byte_width}']
 
 if len(hlir.header_instances) == 0:
