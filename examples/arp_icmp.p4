@@ -39,7 +39,7 @@ header arp_t {
   ip4Addr_t src_ip;
   macAddr_t dst_mac;
   ip4Addr_t dst_ip;
-  }
+}
 
 header icmp_t {
     bit<8> icmp_type;
@@ -47,14 +47,7 @@ header icmp_t {
     bit<16> checksum;
     bit<16> identifier;
     bit<16> sequence_number;
-    bit<32> pad_a; 
-    bit<32> pad_b;
-    bit<32> pad_c;
-    bit<32> pad_d;
-    bit<32> pad_e;
-    bit<32> pad_f;
-    bit<32> pad_g;
-    bit<32> pad_h;
+    varbit<1024> padding;
 }
 
 header ipv4_t {
@@ -119,7 +112,8 @@ parser MyParser(packet_in packet,
     }
 
     state parse_icmp {
-      packet.extract(hdr.icmp);
+      bit<32> n = (bit<32>) (hdr.ipv4.totalLen) - (bit<32>)(hdr.ipv4.versionihl << 2);
+      packet.extract(hdr.icmp, 8*n-64);
       transition accept;
     }
 }
@@ -146,45 +140,50 @@ control MyIngress(inout headers hdr,
     }
 
     action arp_reply(macAddr_t request_mac) {
-      //update operation code from request to reply
-      hdr.arp.op_code = ARP_REPLY;
+        //update operation code from request to reply
+        hdr.arp.op_code = ARP_REPLY;
       
-      //reply's dst_mac is the request's src mac
-      hdr.arp.dst_mac = hdr.arp.src_mac;
+        //reply's dst_mac is the request's src mac
+        hdr.arp.dst_mac = hdr.arp.src_mac;
       
-      //reply's dst_ip is the request's src ip
-      hdr.arp.src_mac = request_mac;
+        //reply's dst_ip is the request's src ip
+        hdr.arp.src_mac = request_mac;
 
-      //reply's src ip is the request's dst ip
-      hdr.arp.src_ip = hdr.arp.dst_ip;
+        //reply's src ip is the request's dst ip
+        hdr.arp.src_ip = hdr.arp.dst_ip;
 
-      //update ethernet header
-      hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
-      hdr.ethernet.srcAddr = request_mac;
+        //update ethernet header
+        hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
+        hdr.ethernet.srcAddr = request_mac;
 
-      //send it back to the same port
-      standard_metadata.egress_spec = standard_metadata.ingress_port;
-      standard_metadata.egress_port = standard_metadata.ingress_port;
-      
+        //send it back to the same port
+        standard_metadata.egress_port = standard_metadata.ingress_port;
     }
     
-     action l2_forward(egressSpec_t port) {
-        standard_metadata.egress_spec = port;
-        standard_metadata.egress_port = port;
-    }
 
     action icmp_reply() {
-        standard_metadata.egress_port = standard_metadata.ingress_port;
+        //set ICMP type to Echo reply
         hdr.icmp.icmp_type = 0;
+
+        //for checksum calculation this field should be zero
         hdr.icmp.checksum = 0;
+
+        //swap the source and destination IP addresses
 	bit<32> tmp_ip = hdr.ipv4.srcAddr;
         hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
         hdr.ipv4.dstAddr = tmp_ip;
+
+        //swap the source and destination MAC addresses
         bit<48> tmp_mac = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
         hdr.ethernet.srcAddr = tmp_mac;
+
+        //send it back to the same port 
+        standard_metadata.egress_port = standard_metadata.ingress_port;
     }
 
+
+    // ARP table implements an ARP responder
     table arp_exact {
       key = {
         hdr.arp.dst_ip: exact;
@@ -197,38 +196,32 @@ control MyIngress(inout headers hdr,
       default_action = drop;
     }
     
-    table l2forward_exact {
+    // replies to ICMP echo requests if the destination IP matches
+    table icmp_responder {
         key = {
             hdr.ethernet.dstAddr: exact;
+            hdr.ipv4.dstAddr: lpm;
         }
         actions = {
-            l2_forward;
+            icmp_reply;
             drop;
-            NoAction;
         }
         size = 1024;
-        default_action = NoAction();
+        default_action = drop();
     }
 
     apply {
-        if (hdr.ethernet.isValid() && hdr.ipv4.isValid()){
-          if (hdr.icmp.isValid()){
-            icmp_reply();
-          }
-          else {
-            l2forward_exact.apply();
-          }
+        if (hdr.arp.isValid()){
+            arp_exact.apply();
         }
-        else if (hdr.arp.isValid())
+        else if (hdr.icmp.isValid())
         {
-          arp_exact.apply();
+          icmp_responder.apply();
         }
         else
         {
-	  standard_metadata.egress_port = 1;
-//          mark_to_drop(standard_metadata);        
+          drop();       
         }
-        
     }
 }
 
@@ -248,6 +241,8 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
      apply {
+
+        //update ICMP checksum
 	update_checksum(
 	    hdr.icmp.isValid(),
             {
@@ -256,20 +251,27 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
               16w0,
               hdr.icmp.identifier,
               hdr.icmp.sequence_number,
-              hdr.icmp.pad_a,
-              hdr.icmp.pad_b,
-              hdr.icmp.pad_c,
-              hdr.icmp.pad_d,
-              hdr.icmp.pad_e,
-              hdr.icmp.pad_f,
-              hdr.icmp.pad_g,
-              hdr.icmp.pad_h
+              hdr.icmp.padding
             },
               hdr.icmp.checksum,
               HashAlgorithm.csum16);
 
-        update_checksum(hdr.ipv4.isValid(), 
-                        { hdr.ipv4.versionihl, hdr.ipv4.diffserv, hdr.ipv4.totalLen, hdr.ipv4.identification, hdr.ipv4.fragOffset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.dstAddr }, hdr.ipv4.hdrChecksum, HashAlgorithm.csum16);
+        //update IPv4 checksum
+        update_checksum(
+            hdr.ipv4.isValid(), 
+            { 
+              hdr.ipv4.versionihl, 
+              hdr.ipv4.diffserv, 
+              hdr.ipv4.totalLen, 
+              hdr.ipv4.identification, 
+              hdr.ipv4.fragOffset, 
+              hdr.ipv4.ttl, 
+              hdr.ipv4.protocol, 
+              hdr.ipv4.srcAddr, 
+              hdr.ipv4.dstAddr 
+            }, 
+              hdr.ipv4.hdrChecksum, 
+              HashAlgorithm.csum16);
     }
 }
 
