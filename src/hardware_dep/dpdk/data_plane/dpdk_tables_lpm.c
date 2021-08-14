@@ -8,6 +8,19 @@
 
 #define LPM6_BYTE_SIZE_LIMIT 32
 
+uint8_t* reorder_key(uint8_t *key, const int size)
+{
+	uint8_t tmp;
+	int i = 0;
+	for (i=0;i<size/2;++i)
+	{
+		tmp = key[i];
+		key[i] = key[size-i-1];
+		key[size-i-1] = tmp;
+	}
+	return key;
+}
+
 struct rte_lpm* lpm4_create(int socketid, const char* name, int max_size)
 {
 #if RTE_VERSION >= RTE_VERSION_NUM(16,04,0,0)
@@ -71,20 +84,18 @@ void lpm_create(lookup_table_t* t, int socketid)
 void lpm_add(lookup_table_t* t, uint8_t* key, uint8_t depth, uint8_t* value)
 {
     if (t->entry.key_size == 0) return; // don't add entries to keyless tables
-
     extended_table_t* ext = (extended_table_t*)t->table;
     ext->content[ext->size] = make_table_entry_on_socket(t, value);
     if (t->entry.key_size <= 4) {
         // the rest is zeroed in case of keys smaller than 4 bytes
         uint32_t key32 = 0;
-        memcpy(&key32, key, t->entry.key_size);
-
+        memcpy((uint8_t*)&key32 + (4 - t->entry.key_size), key, t->entry.key_size);
+	reorder_key((uint8_t*)&key32, 4);
         lpm4_add(t, ext->rte_table, key32, depth, ext->size++);
     } else if (t->entry.key_size <= LPM6_BYTE_SIZE_LIMIT) {
         static uint8_t key128[LPM6_BYTE_SIZE_LIMIT];
         memset(key128, 0, LPM6_BYTE_SIZE_LIMIT);
         memcpy(key128, key, t->entry.key_size);
-
         lpm6_add(t, ext->rte_table, key128, depth, ext->size++);
     }
 }
@@ -97,7 +108,8 @@ uint8_t* lpm_lookup(lookup_table_t* t, uint8_t* key)
 
     if (t->entry.key_size <= 4) {
         uint32_t key32 = 0;
-        memcpy(&key32, key, t->entry.key_size);
+        memcpy((uint8_t*)&key32 + (4 - t->entry.key_size), key, t->entry.key_size);
+        reorder_key((uint8_t*)&key32, 4);
 
         table_index_t result;
 #if RTE_VERSION >= RTE_VERSION_NUM(16,04,0,0)
@@ -112,7 +124,6 @@ uint8_t* lpm_lookup(lookup_table_t* t, uint8_t* key)
         static uint8_t key128[LPM6_BYTE_SIZE_LIMIT];
         memset(key128, 0, LPM6_BYTE_SIZE_LIMIT);
         memcpy(key128, key, t->entry.key_size);
-
         table_index_t result;
         int ret = rte_lpm6_lookup(ext->rte_table, key128, &result);
         return ret == 0 ? ext->content[result] : t->default_val;
@@ -131,3 +142,4 @@ void lpm_flush(lookup_table_t* t)
         rte_lpm6_delete_all(ext->rte_table);
     }
 }
+

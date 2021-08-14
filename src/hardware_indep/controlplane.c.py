@@ -113,7 +113,7 @@ def gen_fill_key_component_slice(ke):
     compiler_common.post_statement_buffer = ""
 
 
-def gen_fill_key_component(k, idx, byte_width, tmt, kmt):
+def gen_fill_key_component(k, idx, byte_width, tmt, kmt, keyoffset):
     ke = k.expression
     if ke.node_type == 'MethodCallExpression':
         # TODO can this be anything other than a call to isValid?
@@ -124,12 +124,16 @@ def gen_fill_key_component(k, idx, byte_width, tmt, kmt):
     elif ke.node_type == 'Slice':
         #[     // TODO fill Slice component properly (call gen_fill_key_component_slice)
     else:
-        #[     memcpy(&(key->${get_key_name(k, idx)}), field_matches[$idx]->bitmap, $byte_width);
+        #[     memcpy(((uint8_t*)key) + ${keyoffset}, field_matches[$idx]->bitmap, $byte_width);
+        #if byte_width<=4:
+        #    #[     memcpy((uint8_t*)&(key->${get_key_name(k, idx)}), field_matches[$idx]->bitmap, $byte_width);
+        #else:
+        #    #[     memcpy(key->${get_key_name(k, idx)}, field_matches[$idx]->bitmap, $byte_width);
         if tmt == "lpm":
             if kmt == "exact":
-                #[     prefix_length += ${get_key_byte_width(k)};
+                #[     prefix_length += 8*${get_key_byte_width(k)};
             if kmt == "lpm":
-                #[     prefix_length += $byte_width;
+                #[     prefix_length += field_matches[$idx]->prefix_length;
 
 
 for table in hlir.tables:
@@ -144,18 +148,19 @@ for table in hlir.tables:
     if extra_init[tmt]:
         #[     ${extra_init[tmt]}
 
-    for i, k in enumerate(sorted(table.key.keyElements, key = lambda k: k.match_order)):
-        kmt = k.matchType.path.name
-
-        if kmt == "lpm":
-            #[     prefix_length += field_matches[$i]->prefix_length;
-        if kmt == "ternary":
-            #[     /* TODO ternary */
-
-
+    #for i, k in enumerate(sorted(table.key.keyElements, key = lambda k: k.match_order)):
+    #    kmt = k.matchType.path.name
+    #
+    #    if kmt == "lpm":
+    #        #[     prefix_length += field_matches[$i]->prefix_length;
+    #    if kmt == "ternary":
+    #        #[     /* TODO ternary */
+    keyoffset = 0
     for idx, k in enumerate(sorted(table.key.keyElements, key = lambda k: k.match_order)):
         byte_width = get_key_byte_width(k)
-        #= gen_fill_key_component(k, idx, byte_width, tmt, kmt)
+        kmt = k.matchType.path.name
+        #= gen_fill_key_component(k, idx, byte_width, tmt, kmt, keyoffset)
+        keyoffset = byte_width
 
     if extra_return[tmt]:
         #[     ${extra_return[tmt]}
