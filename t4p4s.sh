@@ -448,10 +448,6 @@ ALL_COLOUR_NAMES=(action bytes control core default error expected extern field 
 
 nn="\033[0m"
 
-# Check if configuration is valid
-[ "${P4C}" == "" ] && exit_program "\$P4C not defined"
-[ "$ARCH" == "dpdk" ] && [ "${RTE_SDK}" == "" ] && exit_program "\$RTE_SDK not defined"
-
 # --------------------------------------------------------------------
 # Parse opts from files and command line
 
@@ -680,7 +676,7 @@ fi
 verbosemsg "Options: $(print_opts)"
 
 # Phase 0a: Check for required programs
-if [ "$(optvalue c)" != off -a ! -f "$P4C/build/p4test" ]; then
+if [ "$(optvalue c)" != off -a ! -f "$P4C/build/p4test" -a ! command -v p4test &> /dev/null ]; then
     exit_program "cannot find P4C compiler at $(cc 1)\$P4C/build/p4test$nn"
 fi
 
