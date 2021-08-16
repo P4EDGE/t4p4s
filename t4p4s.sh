@@ -488,10 +488,6 @@ ALL_COLOUR_NAMES=(action async bytes control core default error expected extern 
 
 nn="\033[0m"
 
-# Check if configuration is valid
-[ "${P4C}" == "" ] && exit_program "\$P4C not defined"
-[ "$ARCH" == "dpdk" ] && [ "${RTE_SDK}" == "" ] && exit_program "\$RTE_SDK not defined"
-
 # --------------------------------------------------------------------
 # Parse opts from files and command line
 
