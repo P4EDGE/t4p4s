@@ -125,6 +125,7 @@ def gen_format_declaration(d, varname_override):
     var_name = d.name if varname_override is None else varname_override
 
     if d.node_type == 'Declaration_Variable':
+        #print('---------------',d.urtype.node_type)
         if d.urtype.node_type == 'Type_Header':
             # Data for variable width headers is stored in parser_state_t
             pass
@@ -1122,11 +1123,65 @@ def gen_format_call_extern(args, mname, m, funname_override=None):
         #pre[        .buffer_size = $size,
         #pre[        .buffer = $data,
         #pre}     };
+    elif funname_override=="update_checksum" and len(listexprs)==0:
+        structexprs = args.map('expression').filter('node_type', 'StructExpression')
+        lec = structexprs[0].components
+        components = lec.filterfalse('node_type', 'Constant').flatmap(lambda comp: comp.components if comp.node_type == 'StructExpression' else [comp])
+        components = [c.expression for c in components]
+        hdrflds =  [get_hdrfld_name(c) for c in components]
+        size = generate_var_name('size')
+        buf = generate_var_name('buffer')
+        data = generate_var_name('buffer_data')
+        offset = generate_var_name('offset')
+        #pre[     int $size = 0
+        for component in components:
+            if component.node_type == 'Member':
+                hdrname, fldname = get_hdrfld_name(component)
+                #pre[         + field_desc(pd, FLD($hdrname,$fldname)).bytewidth
+            elif component.node_type == 'PathExpression':
+                #pre[         + (${component.urtype.size}+7)/8
+            elif component.node_type == 'Cast':
+                #pre[         + (${component.expr.urtype.size}+7)/8
+            elif component.node_type == 'Constant':
+                #pre[         /* Const */
+            else:
+                addError('Calling extern', f'Encountered unexpected extern argument of type {component.node_type}')
+        #pre[         ;
+        #pre[     uint8_t $data[$size];
+        #pre[     int $offset = 0;
+        for component in components:
+            if component.node_type == 'Member':
+                hdrname, fldname = get_hdrfld_name(component)
+                #pre[     EXTRACT_BYTEBUF_PACKET(pd, HDR($hdrname), FLD($hdrname,$fldname), $data + $offset);
+                #pre[     $offset += field_desc(pd, FLD($hdrname,$fldname)).bytewidth;
+            elif component.node_type == 'PathExpression':
+                name = component.path.name
+                is_local = is_control_local_var(name)
+                param = f'local_vars->{name}' if is_local else f'parameters.{name}'
+                #pre[     memcpy($data + $offset, &($param), (${component.urtype.size}+7)/8);
+                #pre[     $offset += (${component.urtype.size}+7)/8;
+            elif component.node_type == 'Cast':
+                cast = generate_var_name('cast')
+                #pre[     ${format_type(component.destType, cast)} = (${format_type(component.destType)})(${format_expr(component.expr)});
+                #pre[     memcpy($data + $offset, &$cast, (${component.destType.urtype.size}+7)/8);
+                #pre[     $offset += (${component.destType.urtype.size}+7)/8;
+            elif component.node_type == 'Constant':
+                #pre[     /* Const */
+            else:
+                addError('Calling extern', f'Encountered unexpected extern argument of type {component.node_type}')
+
+        #pre{     uint8_buffer_t $buf = {
+        #pre[        .buffer_size = $size,
+        #pre[        .buffer = $data,
+        #pre}     };
+ 
 
     #pre=     gen_extern_decl(mname, m)
 
     with SugarStyle("inline_comment"):
         fmt_args = [fmt_arg for arg in args if not arg.is_vec() for fmt_arg in [gen_format_method_parameter(arg, buf)] if fmt_arg is not None]
+        if funname_override=="update_checksum" and len(listexprs)==0:
+            fmt_args[1] = buf
         #[     $mname(${gen_list_elems(fmt_args, "SHORT_STDPARAMS_IN")})
 
 ##############
@@ -1219,7 +1274,7 @@ def gen_fmt_StructInitializerExpression(e, format_as_value=True, expand_paramete
 
 def gen_fmt_StructExpression(e, format_as_value=True, expand_parameters=False, needs_variable=False, funname_override=None):
     varname = gen_var_name(e)
-    #pre[ ${e.type.name} $varname;
+    #pre[ ${e.type.name}_t $varname;
     for component in e.components:
         ce = component.expression
         if ce.node_type == 'Constant':

@@ -39,7 +39,7 @@ for struct in hlir.news.data.filter(lambda n: not any(t.node_type == 'Type_Heade
     #{ typedef struct {
     for field in struct.fields:
         #[     ${format_type(field.urtype, field.name)};
-    #} } ${name}_t;
+    #} } __attribute__((packed)) ${name}_t;
 
 
 for typedef in hlir.typedefs:
