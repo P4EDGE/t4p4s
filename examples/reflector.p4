@@ -64,7 +64,7 @@ control MyIngress(inout headers hdr,
        hdr.ethernet.srcAddr = tmp_mac;
 
        //send it back to the same port
-       standard_metadata.egress_spec = standard_metadata.ingress_port;
+       //standard_metadata.egress_spec = standard_metadata.ingress_port;
        standard_metadata.egress_port = standard_metadata.ingress_port;
     }
 
