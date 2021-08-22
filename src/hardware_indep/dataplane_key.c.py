@@ -12,6 +12,7 @@ for table in hlir.tables:
         continue
 
     #{ void table_${table.name}_key(packet_descriptor_t* pd, uint8_t* key) {
+    #[     uint32_t tmp;
     sortedfields = sorted(table.key.keyElements, key=lambda k: k.match_order)
     #TODO variable length fields
     #TODO field masks
@@ -27,8 +28,17 @@ for table in hlir.tables:
             #}     }
 
             if f.size <= 32:
-                #[     EXTRACT_INT32_BITS_PACKET(pd, HDR(${hi_name}), FLD(${f.header.name},${f.field_name}), *(uint32_t*)key);
-                #[     key += sizeof(uint32_t);
+                #[     EXTRACT_INT32_BITS_PACKET(pd, HDR(${hi_name}), FLD(${f.header.name},${f.field_name}), tmp); // *(uint32_t*)key); -- ${f.size}
+                if ((f.size+7) // 8) == 1:
+                    #[     *(uint8_t*)key = (uint8_t)tmp;
+                    #[     key += 1;
+                elif ((f.size+7) // 8) == 2:
+                    #[     *(uint16_t*)key = (uint16_t)tmp;
+                    #[     key += 2;
+                else:
+                    #[     *(uint32_t*)key = tmp;
+                    #[     key += 4;
+                #[     // key += sizeof(uint32_t);
             elif f.size > 32 and f.size % 8 == 0:
                 byte_width = (f.size+7)//8
                 #[     EXTRACT_BYTEBUF_PACKET(pd, HDR(${hi_name}), FLD(${f.header.name},${f.field_name}), key);

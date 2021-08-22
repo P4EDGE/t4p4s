@@ -13,6 +13,20 @@ table_infos = [(table, table.short_name + ("/keyless" if table.key_length_bits =
 
 #{ #ifdef T4P4S_DEBUG
 
+def key_length(hlir, keyelement):
+    expr = keyelement.expression.get_attr('expr')
+    if expr is None:
+        return keyelement.expression.type.size
+
+    if expr.type.name == 'metadata':
+        keyelement.header = hlir.allmetas
+        if 'size' not in keyelement:
+            keyelement.size = hlir.allmetas.urtype.fields.get(metaname).urtype.size
+
+    keyelement.header = hlir.header_instances.get(keyelement.header_name)
+    return keyelement.size if keyelement.header is not None else 0
+
+
 #{     void show_params_by_action_id(char* out, int table_id, int action_id, const void* entry) {
 for table in hlir.tables:
     if 'key' not in table or table.key_length_bits == 0:
@@ -90,15 +104,15 @@ for table in hlir.tables:
 for table, table_info in table_infos:
     if 'key' not in table or table.key_length_bits == 0:
         continue
-
-    #{     void ${table.name}_apply_show_hit_with_key(uint8_t* key[${table.key_length_bytes}], bool hit, const table_entry_${table.name}_t* entry, STDPARAMS) {
+    klb = sum((key_length(hlir, keyelement)+7) // 8 for keyelement in table.key.keyElements)
+    #{     void ${table.name}_apply_show_hit_with_key(uint8_t* key[${klb}], bool hit, const table_entry_${table.name}_t* entry, STDPARAMS) {
     #[         char params_txt[1024];
     for dbg_action in table.actions:
         aoname = dbg_action.action_object.name
         dbg_action_name = dbg_action.expression.method.path.name
         #{         if (!strcmp("${dbg_action_name}", action_names[entry->action.action_id])) {
         #[             ${table.name}_show_params_${aoname}(params_txt, &(entry->action.${aoname}_params));
-        #[             apply_show_hit_with_key_msg(key, hit, table_config[TABLE_${table.name}].entry.key_size, ${table.key_length_bytes}, "${table.matchType.name}", action_short_names[entry->action.action_id], params_txt, "${table_info}", STDPARAMS_IN);
+        #[             apply_show_hit_with_key_msg(key, hit, table_config[TABLE_${table.name}].entry.key_size, ${klb}, "${table.matchType.name}", action_short_names[entry->action.action_id], params_txt, "${table_info}", STDPARAMS_IN);
         #}         }
     #}     }
     #[
@@ -118,3 +132,5 @@ for table, table_info in table_infos:
             #[     debug(" " T4LIT(XXXX,status) " Lookup on $$[table]{table_info}: $$[action]{}{%s} (default)\n", action_short_names[action_id]);
     #} }
     #[
+
+

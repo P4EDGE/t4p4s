@@ -14,10 +14,26 @@ from compiler_common import generate_var_name, prepend_statement
 #[ #include "util_debug.h"
 #[
 
+def key_length(hlir, keyelement):
+    expr = keyelement.expression.get_attr('expr')
+    if expr is None:
+        return keyelement.expression.type.size
+
+    if expr.type.name == 'metadata':
+        keyelement.header = hlir.allmetas
+        if 'size' not in keyelement:
+            keyelement.size = hlir.allmetas.urtype.fields.get(metaname).urtype.size
+
+    keyelement.header = hlir.header_instances.get(keyelement.header_name)
+    return keyelement.size if keyelement.header is not None else 0
+
+
+
 #[ lookup_table_t table_config[NB_TABLES] = {
 for table in hlir.tables:
     tmt = table.matchType.name
     ks  = table.key_length_bytes
+    ks = sum((key_length(hlir, keyelement)+7) // 8 for keyelement in table.key.keyElements)
     #[ {
     #[  .name           = "${table.name}",
     #[  .canonical_name = "${table.canonical_name}",

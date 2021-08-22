@@ -4,12 +4,26 @@
 from utils.codegen import format_declaration, format_statement, format_expr, format_type, gen_format_type, get_method_call_env
 from compiler_log_warnings_errors import addError, addWarning
 from compiler_common import types, generate_var_name, get_hdrfld_name, unique_everseen
-
 #[ #include "dataplane_impl.h"
 #[ #include "gen_model.h"
 
 # TODO make this an import from hardware_indep
 #[ #include "dpdk_smem.h"
+
+
+def key_length(hlir, keyelement):
+    expr = keyelement.expression.get_attr('expr')
+    if expr is None:
+        return keyelement.expression.type.size
+
+    if expr.type.name == 'metadata':
+        keyelement.header = hlir.allmetas
+        if 'size' not in keyelement:
+            keyelement.size = hlir.allmetas.urtype.fields.get(metaname).urtype.size
+
+    keyelement.header = hlir.header_instances.get(keyelement.header_name)
+    return keyelement.size if keyelement.header is not None else 0
+
 
 table_infos = [(table, table.short_name + ("/keyless" if table.key_length_bits == 0 else "") + ("/hidden" if table.is_hidden else "")) for table in hlir.tables]
 
@@ -29,7 +43,8 @@ for table, table_info in table_infos:
         #[     bool hit = false;
         #[     ${table.name}_apply_show_hit(entry->action.action_id, STDPARAMS_IN);
     else:
-        #[     uint8_t* key[${table.key_length_bytes}];
+        klb = sum((key_length(hlir, keyelement)+7) // 8 for keyelement in table.key.keyElements)
+        #[     uint8_t* key[${klb}]; //{table.key_length_bytes}];
         #[     table_${table.name}_key(pd, (uint8_t*)key);
 
         #[     table_entry_${table.name}_t* entry = (table_entry_${table.name}_t*)${table.matchType.name}_lookup(tables[TABLE_${table.name}], (uint8_t*)key);

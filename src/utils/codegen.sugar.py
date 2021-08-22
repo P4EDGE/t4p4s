@@ -1123,7 +1123,7 @@ def gen_format_call_extern(args, mname, m, funname_override=None):
         #pre[        .buffer_size = $size,
         #pre[        .buffer = $data,
         #pre}     };
-    elif funname_override=="update_checksum" and len(listexprs)==0:
+    elif (funname_override=="update_checksum" or funname_override=="hash") and len(listexprs)==0:
         structexprs = args.map('expression').filter('node_type', 'StructExpression')
         lec = structexprs[0].components
         components = lec.filterfalse('node_type', 'Constant').flatmap(lambda comp: comp.components if comp.node_type == 'StructExpression' else [comp])
@@ -1182,6 +1182,8 @@ def gen_format_call_extern(args, mname, m, funname_override=None):
         fmt_args = [fmt_arg for arg in args if not arg.is_vec() for fmt_arg in [gen_format_method_parameter(arg, buf)] if fmt_arg is not None]
         if funname_override=="update_checksum" and len(listexprs)==0:
             fmt_args[1] = buf
+        elif funname_override=="hash" and len(listexprs)==0:
+            fmt_args[3] = buf
         #[     $mname(${gen_list_elems(fmt_args, "SHORT_STDPARAMS_IN")})
 
 ##############
