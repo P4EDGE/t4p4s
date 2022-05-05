@@ -1,0 +1,16 @@
+meson
+pyelftools
+pybind11
+pysimdjson
+ipaddr
+scapy
+dill
+setuptools
+backtrace
+ipdb
+termcolor
+colored
+pyyaml
+ujson
+ruamel.yaml
+p4runtime-shell
