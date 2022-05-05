@@ -36,6 +36,7 @@ install -m 644 packaging/%{shortname}.service %{buildroot}%{_unitdir}
 cp -r ./* %{buildroot}%{t4p4sroot}
 
 %post
+python3 -m pip install -r %{t4p4sroot}/requirements.txt
 %systemd_post %{shortname}.service
 
 %preun
