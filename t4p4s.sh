@@ -435,7 +435,7 @@ PYTHON_PARSE_HELPER_PROCESS="$!"
 
 unset PYTHON_PARSE_HELPER
 
-sleep 0.1
+sleep 0.5
 
 
 # --------------------------------------------------------------------
