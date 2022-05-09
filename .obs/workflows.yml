@@ -1,0 +1,21 @@
+build_stable:
+  steps:
+    - trigger_services:
+        project: "home:p4edge"
+        package: "p4edge-t4p4s"
+  filters:
+    event: tag_push
+    branches:
+      only:
+        - master
+
+build_testing:
+  steps:
+    - trigger_services:
+        project: "home:p4edge:testing"
+        package: "p4edge-t4p4s"
+  filters:
+    event: push
+    branches:
+      only:
+        - master
