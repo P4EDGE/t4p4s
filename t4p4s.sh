@@ -320,7 +320,8 @@ ARCH_OPTS_FILE=${ARCH_OPTS_FILE-opts_${ARCH}.cfg}
 
 colours[$i]="\033[${COLOUR}m"
 
-CFGFILES=${CFGFILES-!cmdline!,!varcfg!${EXAMPLES_CONFIG_FILE},${ARCH_OPTS_FILE}}
+ADD_EX_CFG=$(find -L ./examples -name "*-examples.cfg" | sed ':a; N; $!ba; s/\n/,!varcfg!/')
+CFGFILES=${CFGFILES-!cmdline!,!varcfg!${EXAMPLES_CONFIG_FILE},!varcfg!${ADD_EX_CFG},${ARCH_OPTS_FILE}}
 
 declare -A OPTS=([cfgfiles]="$CFGFILES")
 
