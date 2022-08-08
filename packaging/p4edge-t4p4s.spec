@@ -9,7 +9,7 @@ License:        Apache 2.0
 URL:            https://github.com/p4edge/t4p4s
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
-Requires:       python3, python3-pip
+Requires:       python3, python3-pip, ccache
 BuildRequires:  debbuild-macros-systemd
 Packager:       Dávid Kis <kidraai@.inf.elte.hu>
 
