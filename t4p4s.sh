@@ -995,7 +995,6 @@ executable(
     gnu_symbol_visibility : 'hidden',
     include_directories   : include_dirs,
     dependencies          : all_dependencies,
-    link_args             : ['/usr/local/lib/x86_64-linux-gnu/librte_bus_vdev.so']
 )
 EOT
 
