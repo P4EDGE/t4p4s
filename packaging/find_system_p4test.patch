@@ -1,0 +1,39 @@
+diff --git a/hlir.py b/hlir.py
+index 1f71862..84c87d5 100644
+--- a/hlir.py
++++ b/hlir.py
+@@ -9,6 +9,7 @@ import json
+ import subprocess
+ import os
+ import os.path
++import shutil
+ import tempfile
+
+ from hlir16.p4node import P4Node
+@@ -80,8 +81,14 @@ def p4_to_json(p4_filename, json_filename=None, p4_version=16, p4c_path=None, op
+     if json_filename is None:
+         json_filename = f'{filename}.json'
+
+-    if p4c_path is None:
+-        p4c_path = os.environ['P4C']
++    p4test = shutil.which('p4test')
++    p4include = '/usr/share/p4c/p4include/'
++    if not os.path.exists(p4include):
++        p4include = '/usr/local/share/p4c/p4include/'
++
++    if p4c_path is None and 'P4C' in os.environ:
++        p4test = os.path.join(os.environ['P4C'], "build", "p4test")
++        p4include = os.path.join(os.environ['P4C'], "p4include")
+
+     if p4_version is None:
+         ext_to_vsn = {
+@@ -91,9 +98,6 @@ def p4_to_json(p4_filename, json_filename=None, p4_version=16, p4c_path=None, op
+
+         p4_version = ext_to_vsn[ext] if ext in ext_to_vsn else 16
+
+-    p4test = os.path.join(p4c_path, "build", "p4test")
+-    p4include = os.path.join(p4c_path, "p4include")
+-
+     cmd_opts = ['--p4v', f'{p4_version}'] if p4_version is not None else []
+     for opt in opts:
+         cmd_opts += ['-D', opt]

@@ -18,6 +18,9 @@ P4Edge t4p4s
 
 %prep
 %autosetup
+cp ./packaging/find_system_p4test.patch ./src/hlir16/
+cd ./src/hlir16/
+git apply find_system_p4test.patch
 
 %build
 
