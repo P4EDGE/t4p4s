@@ -41,7 +41,7 @@ for _, mcall in {(dig.method.path.name, ','.join(dig.typeArguments.map(format_ty
     #[        // dev_mgr_send_digest(dev_mgr_ptr, (struct p4_digest*)(((Digest_t*)cpd)->ctrl_plane_digest), STD_DIGEST_RECEIVER_ID);
     #} #endif
     #[     send_digest(bg, cpd, STD_DIGEST_RECEIVER_ID);
-    #[     sleep_millis(DIGEST_SLEEP_MILLIS);
+    #[     /* sleep_millis(DIGEST_SLEEP_MILLIS); */
     #} }
     #[
 
