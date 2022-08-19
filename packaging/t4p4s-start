@@ -12,4 +12,4 @@ else
     echo "${P4_PROG}" > "${T4P4S_PROG_FILE}"
 fi
 
-/root/t4p4s/t4p4s.sh :"${P4_PROG}" p4rt
+T4P4S_CC=gcc /root/t4p4s/t4p4s.sh :"${P4_PROG}" p4rt
