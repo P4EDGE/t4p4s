@@ -13,4 +13,6 @@ colored
 pyyaml
 ujson
 ruamel.yaml
+nnpy
+more_itertools
 git+https://github.com/p4lang/p4runtime-shell.git@9c197dee6d9cc48d0958d27f1f151c94239145b9#p4runtime-shell
