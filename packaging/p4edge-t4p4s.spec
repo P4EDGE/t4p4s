@@ -40,7 +40,7 @@ install -m 755 packaging/%{shortname}-start %{buildroot}%{_bindir}
 install -m 755 packaging/%{shortname}-p4rtshell %{buildroot}%{_bindir}
 install -m 644 packaging/%{shortname}.service %{buildroot}%{_unitdir}
 cp -r ./* %{buildroot}%{t4p4sroot}
-
+mkdir -p %{buildroot}%{t4p4sroot}/examples
 
 %post
 python3 -m pip install -r %{t4p4sroot}/requirements.txt
