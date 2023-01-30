@@ -1,7 +1,7 @@
 %{!?t4p4sroot: %global t4p4sroot /root/t4p4s}
-%{!?grpcroot: %global grpcroot /root/grpc}
-%{!?piroot: %global piroot /root/PI}
-%{!?p4rtroot: %global p4rtroot /root/P4Runtime_GRPCPP}
+#%{!?grpcroot: %global grpcroot /root/grpc}
+#%{!?piroot: %global piroot /root/PI}
+#%{!?p4rtroot: %global p4rtroot /root/P4Runtime_GRPCPP}
 %{!?shortname: %global shortname t4p4s}
 
 Name:           p4edge-t4p4s
@@ -14,6 +14,8 @@ Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       python3, python3-pip, ccache, lsof, netcat, ninja-build, libdpdk-dev
 BuildRequires:  debbuild-macros-systemd, git
+BuildRequires:  protobuf-compiler, protobuf-compiler-grpc, libprotobuf-dev
+BuildRequires:  pkg-config, libgrpc-dev, libgrpc++-dev, libboost-thread-dev
 Packager:       Dávid Kis <kidraai@.inf.elte.hu>
 
 %description
@@ -21,11 +23,13 @@ P4Edge t4p4s
 
 %prep
 %autosetup
-cp ./packaging/find_system_p4test.patch ./src/hlir16/
-cd ./src/hlir16/
-git apply find_system_p4test.patch
+git apply --directory=src/hlir16 ./packaging/find_system_p4test.patch
+git apply --directory=third_party/P4Runtime_GRPCPP ./packaging/change_t4p4s_dir.patch
 
 %build
+cd third_party/P4Runtime_GRPCPP
+./install.sh
+T4P4SDIR="../.." ./compile.sh
 
 %install
 
@@ -46,20 +50,20 @@ mkdir -p %{buildroot}%{t4p4sroot}/examples
 python3 -m pip install -r %{t4p4sroot}/requirements.txt
 %systemd_post %{shortname}.service
 
-git clone -b v1.37.0 --recursive --shallow-submodules --depth=1 https://github.com/grpc/grpc %{grpcroot}
+#git clone -b v1.37.0 --recursive --shallow-submodules --depth=1 https://github.com/grpc/grpc %{grpcroot}
 
-mkdir %{piroot} && cd %{piroot}
-git init
-git remote add origin https://github.com/p4lang/PI
-git fetch --depth 1 origin a5fd855d4b3293e23816ef6154e83dc6621aed6a
-git checkout FETCH_HEAD
-git submodule update --init --recursive --depth=1
+#mkdir %{piroot} && cd %{piroot}
+#git init
+#git remote add origin https://github.com/p4lang/PI
+#git fetch --depth 1 origin a5fd855d4b3293e23816ef6154e83dc6621aed6a
+#git checkout FETCH_HEAD
+#git submodule update --init --recursive --depth=1
 
-git clone --depth=1 https://github.com/P4ELTE/P4Runtime_GRPCPP %{p4rtroot}
+#git clone --depth=1 https://github.com/P4ELTE/P4Runtime_GRPCPP %{p4rtroot}
 
-cd %{p4rtroot}
-./install.sh
-./compile.sh
+#cd %{p4rtroot}
+#./install.sh
+#./compile.sh
 
 %preun
 %systemd_preun %{shortname}.service
@@ -73,8 +77,8 @@ cd %{p4rtroot}
 %{t4p4sroot}/examples/*
 %{t4p4sroot}/src/*
 %{t4p4sroot}/*
-%{grpcroot}/*
-%{piroot}/*
-%{p4rtroot}/*
+#%{grpcroot}/*
+#%{piroot}/*
+#%{p4rtroot}/*
 
 %dir %{t4p4sroot}/examples

@@ -1,0 +1,13 @@
+diff --git a/compile.sh b/compile.sh
+index d3324e5..5bc4c7c 100755
+--- a/compile.sh
++++ b/compile.sh
+@@ -8,7 +8,7 @@ fi
+ 
+ GRPCDIR="../grpc-c/build"
+ 
+-T4P4SDIR="../t4p4s"
++T4P4SDIR=${T4P4SDIR:="../t4p4s"}
+ 
+ #LFLAGS="${GRPCDIR}/lib/libgrpc-c.la -lgrpc -lgpr -lprotobuf-c -lpthread"
+ LFLAGS="-lgrpc -lgpr -lprotobuf-c -lpthread"
