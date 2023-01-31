@@ -1,8 +1,10 @@
 #!/bin/bash
 
-export P4PI=/root/PI
-export GRPCPP=/root/P4Runtime_GRPCPP
-export GRPC=/root/grpc
+T4P4S_ROOT=/root/t4p4s
+
+export P4PI="${T4P4S_ROOT}/third_party/PI"
+export GRPCPP="${T4P4S_ROOT}/third_party/P4Runtime_GRPCPP"
+export GRPC="${T4P4S_ROOT}/third_party/grpc"
 
 P4_PROG=l2switch
 T4P4S_PROG_FILE=/root/t4p4s-switch
@@ -12,4 +14,4 @@ else
     echo "${P4_PROG}" > "${T4P4S_PROG_FILE}"
 fi
 
-T4P4S_CC=gcc /root/t4p4s/t4p4s.sh :"${P4_PROG}" p4rt
+PYTHON3="${T4P4S_ROOT}/.venv/bin/python" T4P4S_CC=gcc /root/t4p4s/t4p4s.sh :"${P4_PROG}" p4rt

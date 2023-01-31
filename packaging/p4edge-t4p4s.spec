@@ -1,7 +1,4 @@
 %{!?t4p4sroot: %global t4p4sroot /root/t4p4s}
-#%{!?grpcroot: %global grpcroot /root/grpc}
-#%{!?piroot: %global piroot /root/PI}
-#%{!?p4rtroot: %global p4rtroot /root/P4Runtime_GRPCPP}
 %{!?shortname: %global shortname t4p4s}
 
 Name:           p4edge-t4p4s
@@ -12,7 +9,8 @@ License:        Apache 2.0
 URL:            https://github.com/p4edge/t4p4s
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
-Requires:       python3, python3-pip, ccache, lsof, netcat, ninja-build, libdpdk-dev
+Requires:       python3, python3-pip, python3-venv, ccache, lsof, netcat
+Requires:       ninja-build, libdpdk-dev
 BuildRequires:  debbuild-macros-systemd, git
 BuildRequires:  protobuf-compiler, protobuf-compiler-grpc, libprotobuf-dev
 BuildRequires:  pkg-config, libgrpc-dev, libgrpc++-dev, libboost-thread-dev
@@ -30,6 +28,7 @@ git apply --directory=third_party/P4Runtime_GRPCPP ./packaging/change_t4p4s_dir.
 cd third_party/P4Runtime_GRPCPP
 ./install.sh
 T4P4SDIR="../.." ./compile.sh
+cd ../../
 
 %install
 
@@ -47,23 +46,9 @@ cp -r ./* %{buildroot}%{t4p4sroot}
 mkdir -p %{buildroot}%{t4p4sroot}/examples
 
 %post
-python3 -m pip install -r %{t4p4sroot}/requirements.txt
 %systemd_post %{shortname}.service
-
-#git clone -b v1.37.0 --recursive --shallow-submodules --depth=1 https://github.com/grpc/grpc %{grpcroot}
-
-#mkdir %{piroot} && cd %{piroot}
-#git init
-#git remote add origin https://github.com/p4lang/PI
-#git fetch --depth 1 origin a5fd855d4b3293e23816ef6154e83dc6621aed6a
-#git checkout FETCH_HEAD
-#git submodule update --init --recursive --depth=1
-
-#git clone --depth=1 https://github.com/P4ELTE/P4Runtime_GRPCPP %{p4rtroot}
-
-#cd %{p4rtroot}
-#./install.sh
-#./compile.sh
+python3 -m venv %{t4p4sroot}/.venv
+%{t4p4sroot}/.venv/bin/python -m pip install -r %{t4p4sroot}/requirements.txt
 
 %preun
 %systemd_preun %{shortname}.service
@@ -77,8 +62,5 @@ python3 -m pip install -r %{t4p4sroot}/requirements.txt
 %{t4p4sroot}/examples/*
 %{t4p4sroot}/src/*
 %{t4p4sroot}/*
-#%{grpcroot}/*
-#%{piroot}/*
-#%{p4rtroot}/*
 
 %dir %{t4p4sroot}/examples
