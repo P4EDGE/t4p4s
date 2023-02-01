@@ -38,7 +38,6 @@ mkdir -p %{buildroot}%{t4p4sroot}
 mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_unitdir}
 
-install -m 755 packaging/setup_eth_wlan_bridge.sh %{buildroot}%{t4p4sroot}
 install -m 755 packaging/%{shortname}-start %{buildroot}%{_bindir}
 install -m 755 packaging/%{shortname}-p4rtshell %{buildroot}%{_bindir}
 install -m 644 packaging/%{shortname}.service %{buildroot}%{_unitdir}
